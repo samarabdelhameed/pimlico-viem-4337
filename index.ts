@@ -8,7 +8,7 @@ import { lineaTestnet, polygonMumbai } from "viem/chains"
 
 dotenv.config();
 const apiKey=process.env.PIMLICO_API_KEY
-console.log(apiKey);
+// console.log(apiKey);
 
 // CREATE THE CLIENTS
 const publicClient = createPublicClient({
