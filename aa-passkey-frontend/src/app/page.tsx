@@ -24,12 +24,12 @@ export default function Home() {
       const assertion = await loginWithPasskey()
       console.log("🧠 Assertion:", assertion)
 
-      const response = (assertion as PublicKeyCredential).response as AuthenticatorAssertionResponse
-      const signature = new Uint8Array(response.signature)
-      const hexSignature = `0x${Buffer.from(signature).toString("hex")}`
+      // ⚠️ Placeholder message — استبدليها لاحقاً بالـ userOpHash الفعلي
+      const userOpHash = "0x82ad715fb1cb2d5009b8af3ad73b4e358d40da9f00910af3d860d62e8722e75f"
 
-      // Placeholder message (replace later with actual userOpHash)
-      const userOpHash = "sign this for login"
+      const response = (assertion as PublicKeyCredential).response as AuthenticatorAssertionResponse
+      const signatureBytes = new Uint8Array(response.signature)
+      const hexSignature = `0x${Buffer.from(signatureBytes).toString("hex")}`
 
       const res = await fetch("/api/userophash", {
         method: "POST",
@@ -48,9 +48,8 @@ export default function Home() {
       }
 
       const result = await res.json()
-
-      setMessage("✅ Logged in with Passkey!")
       console.log("🔏 Signature from API:", result.signature)
+      setMessage("✅ Logged in with Passkey!")
     } catch (err) {
       console.error("❌ Login error:", err)
       setMessage("❌ Login failed")
