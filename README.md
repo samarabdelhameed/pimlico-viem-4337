@@ -1,22 +1,145 @@
-# Pimlico Tutorial Template
+# 🔐 AA Wallet – Account Abstraction Wallet with Pimlico SDK + Viem (Sepolia)
 
-This is a repository containing a simple template for completing the [the Pimlico tutorials](https://docs.pimlico.io/tutorial) that includes Typescript, ethers v5, ts-node, and Pimlico's [ERC-20 Paymaster SDK](https://docs.pimlico.io/reference/erc20-paymaster/sdk).
+> A lightweight, minimal smart wallet implementation using [EIP-4337](https://eips.ethereum.org/EIPS/eip-4337), powered by **Pimlico Bundler & Paymaster SDK**, built using **Viem** and deployed on **Sepolia** testnet.
 
-To set up the template, clone this repository, run install the dependencies, and run `npm start`!
+---
+
+## 👀 Overview
+
+This repository implements the **core logic of an Account Abstraction wallet**. The project includes:
+
+- ERC-4337 Entry Point integration
+- Counterfactual wallet address generation (`initCode`)
+- Viem-based client and bundler setup
+- Bundler and Paymaster connection via Pimlico SDK
+- Ready to integrate **WebAuthn/Passkey Login**
+
+> This is a base repo to test and simulate UserOps flow without frontend yet.
+
+---
+
+## ⚙️ Architecture
+
+```mermaid
+flowchart TD
+    A[User or dApp] --> B[Generate initCode]
+    B --> C[Simulate getSenderAddress()]
+    C --> D[Send UserOperation via Pimlico Bundler]
+    D --> E[EntryPoint executes the UserOp]
+    E --> F[Counterfactual Wallet Deployed]
+```
+
+---
+
+## 📂 Folder Structure
+
+```
+.
+├── index.ts               # Main execution logic
+├── .env.example           # Sample environment file
+├── .env                   # (Ignored) contains API keys and private key
+├── tsconfig.json          # TypeScript config
+├── package.json           # Dependencies
+├── README.md              # This file
+```
+
+---
+
+## 🛠 Tech Stack
+
+| Layer         | Library/Tool          | Purpose                         |
+| ------------- | --------------------- | ------------------------------- |
+| 🧠 Core Logic | EIP-4337 / EntryPoint | Account abstraction standard    |
+| ⚙️ Client     | Viem                  | JSON-RPC client & simulation    |
+| ⚡ Bundler    | Pimlico SDK           | Bundler & Paymaster integration |
+| 🔐 Account    | Smart Wallet Factory  | Light Account implementation    |
+| 🔧 Chain      | Sepolia               | Ethereum testnet                |
+
+---
+
+## 🚀 Getting Started
+
+### 1. Clone the project
 
 ```bash
+git clone https://github.com/samarabdelhameed/pimlico-viem-4337.git
+cd pimlico-viem-4337
 npm install
+```
+
+### 2. Add your `.env` file
+
+```env
+PIMLICO_API_KEY=your_pimlico_api_key
+PRIVATE_KEY=your_private_key
+```
+
+### 3. Run the script
+
+```bash
 npm start
 ```
 
-If everything works correctly, you should see 
+---
+
+## ✅ Output (Expected)
 
 ```bash
-$ tsx index.ts
-Generated wallet with private key: 0xe6ba19f354a21f77db8675ab5de8688122b946d42a886456529057d86c685896
-Generated initCode: 0x9406Cc6185a346906296840746125a0E449764545fbfb9cf000000000000000000000000be4a7a463eecc2c79425546d1aef62e091c41f4d0000000000000000000000000000000000000000000000000000000000000000
-✨  Done in 1.76s.
+Generated wallet with private key: 0x...
+Generated initCode: 0x...
+Counterfactual sender address: 0x...
 ```
- printed to the console.
 
-Good luck!
+This means everything is wired up successfully.
+
+---
+
+## 📌 EntryPoint + Factory References
+
+- **EntryPoint (Sepolia)**: `0x5ff137d4b0fdcd49dca30c7cf57e578a026d2789`
+- **LightAccountFactory (Sepolia)**: [`0x23adcfF090C9244672114d3fB89D28a018F528FE`](https://sepolia.etherscan.io/address/0x23adcfF090C9244672114d3fB89D28a018F528FE#code)
+
+---
+
+## 🧠 Implemented
+
+- [x] Viem Client Setup
+- [x] Pimlico Bundler v1 & Paymaster v2 integration
+- [x] Generated `initCode` for counterfactual wallet
+- [x] `getSenderAddress()` logic tested on Sepolia
+- [x] Working `.env` environment
+
+---
+
+## 📌 Roadmap (Next steps)
+
+- [ ] Integrate WebAuthn (Passkey login)
+- [ ] Add frontend (React/Vite or React Native)
+- [ ] Simulate full UserOp submission & signature flow
+- [ ] Add Paymaster sponsor mode (Gasless UX)
+- [ ] Dashboard to monitor UserOps + balances
+
+---
+
+## 📚 Resources
+
+- [Pimlico Docs](https://docs.pimlico.io)
+- [EIP-4337 Spec](https://eips.ethereum.org/EIPS/eip-4337)
+- [Viem Docs](https://viem.sh)
+- [Ethereum Sepolia Explorer](https://sepolia.etherscan.io)
+
+---
+
+## 👩‍💻 Author
+
+**Samar Abdelhameed**
+Smart Contract Engineer & Auditor
+🔗 [Twitter](https://twitter.com/SamarAbdelhmeed) | [GitHub](https://github.com/samarabdelhameed)
+
+---
+
+> This repository is a fork of [mingder78/pimlico-viem-4337](https://github.com/mingder78/pimlico-viem-4337), updated with working AA Wallet logic and Sepolia support.
+
+```
+
+```
