@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { createPasskey, loginWithPasskey } from "./lib/webauthn"
-import { signWithPasskey } from "./lib/passkeySigner"
 
 export default function Home() {
   const [message, setMessage] = useState("")
@@ -13,9 +12,9 @@ export default function Home() {
       const username = "samar@example.com"
       const credential = await createPasskey(userId, username)
       setMessage("✅ Registered Passkey!")
-      console.log("Credential:", credential)
+      console.log("🧠 Credential:", credential)
     } catch (err) {
-      console.error(err)
+      console.error("❌ Registration error:", err)
       setMessage("❌ Registration failed")
     }
   }
@@ -23,12 +22,37 @@ export default function Home() {
   const handleLogin = async () => {
     try {
       const assertion = await loginWithPasskey()
-      const signature = await signWithPasskey("sign this for login")
+      console.log("🧠 Assertion:", assertion)
+
+      const response = (assertion as PublicKeyCredential).response as AuthenticatorAssertionResponse
+      const signature = new Uint8Array(response.signature)
+      const hexSignature = `0x${Buffer.from(signature).toString("hex")}`
+
+      // Placeholder message (replace later with actual userOpHash)
+      const userOpHash = "sign this for login"
+
+      const res = await fetch("/api/userophash", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          message: userOpHash,
+          signature: hexSignature
+        })
+      })
+
+      if (!res.ok) {
+        const errText = await res.text()
+        throw new Error(`API error: ${errText}`)
+      }
+
+      const result = await res.json()
+
       setMessage("✅ Logged in with Passkey!")
-      console.log("Assertion:", assertion)
-      console.log("Signature:", signature)
+      console.log("🔏 Signature from API:", result.signature)
     } catch (err) {
-      console.error(err)
+      console.error("❌ Login error:", err)
       setMessage("❌ Login failed")
     }
   }
