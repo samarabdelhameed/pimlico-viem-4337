@@ -1,101 +1,105 @@
 import dotenv from "dotenv"
-import { getAccountNonce } from "permissionless"
 import {
+  getAccountNonce,
+  getUserOperationHash,
   UserOperation,
   bundlerActions,
-  getSenderAddress,
-  getUserOperationHash,
-  waitForUserOperationReceipt,
-  GetUserOperationReceiptReturnType
 } from "permissionless"
 import {
-  pimlicoBundlerActions,
-  pimlicoPaymasterActions
+  pimlicoBundlerActions
 } from "permissionless/actions/pimlico"
 import {
-  Address,
-  Hash,
-  concat,
   createClient,
   createPublicClient,
   encodeFunctionData,
+  parseEther,
   http,
-  Hex
 } from "viem"
-import {
-  generatePrivateKey,
-  privateKeyToAccount,
-  signMessage
-} from "viem/accounts"
+import { privateKeyToAccount } from "viem/accounts"
 import { sepolia } from "viem/chains"
 
 dotenv.config()
 
-const apiKey = process.env.PIMLICO_API_KEY
-const privateKey = process.env.PRIVATE_KEY
-
+const apiKey = process.env.PIMLICO_API_KEY!
+const privateKey = process.env.PRIVATE_KEY!
 const ENTRY_POINT_ADDRESS = "0x5ff137d4b0fdcd49dca30c7cf57e578a026d2789"
+const RECEIVER = "0x1d58afB3a049DAd98Ab5219fb1FF768E1E3B2ED3"
+const SENDER_ADDRESS = "0xc272ee5f1635680d6599d694564828943C701cEb"
 
-// ✅ استخدمي RPC سريع على شبكة Sepolia
 const publicClient = createPublicClient({
   transport: http("https://ethereum-sepolia.publicnode.com"),
-  chain: sepolia
+  chain: sepolia,
 })
 
-console.log(publicClient)
-
-// ✅ عدلنا اسم الشبكة لـ sepolia بدلاً من linea-testnet
-const chain = "sepolia"
-
 const bundlerClient = createClient({
-  transport: http(`https://api.pimlico.io/v1/${chain}/rpc?apikey=${apiKey}`),
-  chain: sepolia
+  transport: http(`https://api.pimlico.io/v1/sepolia/rpc?apikey=${apiKey}`),
+  chain: sepolia,
 })
   .extend(bundlerActions)
   .extend(pimlicoBundlerActions)
 
-console.log(bundlerClient)
+const owner = privateKeyToAccount(privateKey)
 
-const paymasterClient = createClient({
-  transport: http(`https://api.pimlico.io/v2/${chain}/rpc?apikey=${apiKey}`),
-  chain: sepolia
-}).extend(pimlicoPaymasterActions)
+console.log("Using deployed sender address:", SENDER_ADDRESS)
 
-console.log(paymasterClient)
-
-// GENERATE THE INITCODE
-const SIMPLE_ACCOUNT_FACTORY_ADDRESS = "0x23adcfF090C9244672114d3fB89D28a018F528FE"
-
-const ownerPrivateKey = privateKey
-const owner = privateKeyToAccount(ownerPrivateKey)
-
-console.log("Generated wallet with private key:", ownerPrivateKey)
-
-const initCode = concat([
-  SIMPLE_ACCOUNT_FACTORY_ADDRESS,
-  encodeFunctionData({
-    abi: [
-      {
-        inputs: [
-          { name: "owner", type: "address" },
-          { name: "salt", type: "uint256" }
-        ],
-        name: "createAccount",
-        outputs: [{ name: "ret", type: "address" }],
-        stateMutability: "nonpayable",
-        type: "function"
-      }
-    ],
-    args: [owner.address, 0n]
-  })
-])
-
-console.log("Generated initCode:", initCode)
-console.log("no send initCode yet....")
-
-const senderAddress = await getSenderAddress(publicClient, {
-  initCode,
-  entryPoint: ENTRY_POINT_ADDRESS
+const nonce = await getAccountNonce(publicClient, {
+  sender: SENDER_ADDRESS,
+  entryPoint: ENTRY_POINT_ADDRESS,
 })
 
-console.log("Counterfactual sender address:", senderAddress)
+console.log("Nonce:", nonce)
+
+const callData = encodeFunctionData({
+  abi: [
+    {
+      name: "execute",
+      type: "function",
+      stateMutability: "payable",
+      inputs: [
+        { name: "dest", type: "address" },
+        { name: "value", type: "uint256" },
+        { name: "func", type: "bytes" },
+      ],
+      outputs: [],
+    },
+  ],
+  args: [RECEIVER, parseEther("0.001"), "0x"],
+})
+
+const userOperation: UserOperation = {
+  sender: SENDER_ADDRESS,
+  nonce,
+  initCode: "0x", // تم النشر بالفعل
+  callData,
+  callGasLimit: 100000n,
+  verificationGasLimit: 100000n,
+  preVerificationGas: 21000n,
+  maxFeePerGas: 30_000_000_000n,
+  maxPriorityFeePerGas: 30_000_000_000n,
+  paymasterAndData: "0x",
+  signature: "0x",
+}
+
+console.log("UserOperation:", userOperation)
+
+const userOpHash = await getUserOperationHash({
+  userOperation,
+  entryPoint: ENTRY_POINT_ADDRESS,
+  chainId: await publicClient.getChainId(),
+})
+
+const signature = await owner.signMessage({ message: { raw: userOpHash } })
+userOperation.signature = signature
+
+const userOpHashSent = await bundlerClient.sendUserOperation({
+  userOperation,
+  entryPoint: ENTRY_POINT_ADDRESS,
+})
+
+console.log("UserOperation sent! Hash:", userOpHashSent)
+
+const receipt = await bundlerClient.waitForUserOperationReceipt({
+  hash: userOpHashSent,
+})
+
+console.log("Tx Receipt:", receipt)
